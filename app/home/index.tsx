@@ -1,9 +1,7 @@
+import { calcularPlanetas } from "@/lib/planetas";
 import { calcularCasas, type DadosNatais } from "../../lib/casas";
 
 export default async function Home() {
-  // Dados EXATOS da imagem (Lucas Pacheco, Tubarão/SC):
-  // Sa., 1 December 1984, 9:10 a.m. local — Univ.Time 12:10 (offset -3)
-  // 49w00'25 = lon -49.006944 ; 28s28 = lat -28.466667
   const entrada: DadosNatais = {
     ano: 1984,
     mes: 12,
@@ -17,39 +15,34 @@ export default async function Home() {
     sistemaCasas: "P",
   };
 
-  const r = await calcularCasas(entrada);
+  const ABREV = ["Ari", "Tou", "Gem", "Can", "Leo", "Vir", "Lib", "Esc", "Sag", "Cap", "Aqu", "Pei"];
+  const fmt = (p: { signoIndice: number; grau: number; minuto: number; segundo: number }) =>
+    `${String(p.grau).padStart(2)} ${ABREV[p.signoIndice]} ${String(p.minuto).padStart(2, "0")}'${String(p.segundo).padStart(2, "0")}"`;
 
-  console.log({ r });
+  const esperado: Record<string, string> = {
+    Sol: "9 Sag 29'31",
+    Lua: "22 Pei 19'32",
+    Mercúrio: "29 Sag 54'42",
+    Vênus: "20 Cap 58'04",
+    Marte: "11 Aqu 52'42",
+    Júpiter: "14 Cap 39'05",
+    Saturno: "21 Esc 27'59",
+    Urano: "13 Sag 32'03",
+    Netuno: "0 Cap 20'46",
+    Plutão: "3 Esc 29'55",
+    "Nodo Verdadeiro": "27 Tou 22'36 d",
+    Quíron: "5 Gem 42'23 r",
+  };
 
-  // const f = (p: { signo: string; grau: number; minuto: number; segundo: number }) =>
-  //   `${String(p.grau).padStart(2)}° ${p.signo.padEnd(11)} ${String(p.minuto).padStart(2, "0")}'${String(p.segundo).padStart(2, "0")}"`;
+  console.log("=== PLANETAS (calculado | imagem) ===");
+  for (const pl of calcularPlanetas(entrada)) {
+    const flag = pl.retrogrado ? "r" : "d";
+    console.log(`${pl.nome.padEnd(16)} ${fmt(pl)} ${flag}  | ${esperado[pl.nome] ?? "—"}`);
+  }
 
-  // console.log("JD (UT):", r.jdUT, "\n");
-
-  // // Valores da imagem (arredondados ao minuto) para comparação
-  // const esperado: Record<number, string> = {
-  //   1: "2 Aqu 50'",
-  //   2: "26 Aqu 28'",
-  //   3: "23 Pis 58'",
-  //   10: "25 Lib 55'",
-  //   11: "0 Sag 02'",
-  //   12: "2 Cap 49'",
-  // };
-
-  // console.log("CASA | CALCULADO                    | IMAGEM");
-  // for (const c of r.cuspides) {
-  //   const img = esperado[c.casa] ?? "—";
-  //   console.log(`  ${String(c.casa).padStart(2)} | ${f(c)}  | ${img}`);
-  // }
-  // console.log("\nAC  :", f(r.ascendente));
-  // console.log("MC  :", f(r.meioCeu));
-  // console.log("DC  :", f(r.descendente));
-  // console.log("IC  :", f(r.fundoCeu));
-  // const armcH = r.armc / 15;
-  // const hh = Math.floor(armcH),
-  //   mm = Math.floor((armcH - hh) * 60),
-  //   ss = Math.round(((armcH - hh) * 60 - mm) * 60);
-  // console.log(`Sid.Time (ARMC): ${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}  | imagem: 13:36:06`);
+  console.log("\n=== ÂNGULOS (das casas) ===");
+  const c = calcularCasas(entrada);
+  console.log("AC:", fmt(c.ascendente), " MC:", fmt(c.meioCeu));
 
   return <div>Fazer aqui</div>;
 }

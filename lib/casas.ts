@@ -1,5 +1,3 @@
-"use server";
-
 import * as sweph from "sweph";
 
 /**
@@ -82,7 +80,7 @@ const SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Lib
 const normalizar = (g: number): number => ((g % 360) + 360) % 360;
 
 /** Decompõe uma longitude eclíptica (0-360) em signo/grau/minuto/segundo. */
-function decompor(longitude: number): PosicaoZodiacal {
+export function decompor(longitude: number): PosicaoZodiacal {
   const lon = normalizar(longitude);
   let signoIndice = Math.floor(lon / 30);
   const dentroDoSigno = lon - signoIndice * 30; // 0..30
@@ -104,16 +102,21 @@ function decompor(longitude: number): PosicaoZodiacal {
   return { longitude: lon, signoIndice, signo: SIGNOS[signoIndice], grau, minuto, segundo };
 }
 
-/** Calcula as casas astrológicas a partir dos dados de nascimento. */
-export async function calcularCasas(dados: DadosNatais): Promise<ResultadoCasas> {
-  const sistema = dados.sistemaCasas ?? "P";
-
-  // Converte hora local -> UT. julday aceita horas fora de [0,24): trata o
-  // rollover de dia automaticamente, então a subtração simples é segura.
+/**
+ * Converte os dados de nascimento (hora local + offset) em Julian Day (UT).
+ * julday aceita horas fora de [0,24): trata o rollover de dia automaticamente,
+ * então a subtração simples local→UT é segura mesmo cruzando a meia-noite.
+ */
+export function dadosParaJD(dados: DadosNatais): number {
   const horaLocal = dados.hora + dados.minuto / 60 + (dados.segundo ?? 0) / 3600;
   const horaUT = horaLocal - dados.utcOffset;
+  return sweph.julday(dados.ano, dados.mes, dados.dia, horaUT, sweph.constants.SE_GREG_CAL);
+}
 
-  const jdUT = sweph.julday(dados.ano, dados.mes, dados.dia, horaUT, sweph.constants.SE_GREG_CAL);
+/** Calcula as casas astrológicas a partir dos dados de nascimento. */
+export function calcularCasas(dados: DadosNatais): ResultadoCasas {
+  const sistema = dados.sistemaCasas ?? "P";
+  const jdUT = dadosParaJD(dados);
 
   const res = sweph.houses(jdUT, dados.latitude, dados.longitude, sistema);
   if (res.flag < 0) {
