@@ -34,6 +34,19 @@ function getFatia(anguloInicial: number): string {
   return `M ${cx} ${cy} L ${p1.x.toFixed(3)} ${p1.y.toFixed(3)} ` + `A ${rExterno} ${rExterno} 0 0 0 ${p2.x.toFixed(3)} ${p2.y.toFixed(3)} Z`;
 }
 
+function getLinhaDecanato(grausDentroDoSigno: number, distanciaDaBordaExterna: number) {
+  // ponto inicial: perto da borda externa
+  const p1 = pos(rExterno - distanciaDaBordaExterna, grausDentroDoSigno);
+
+  // ponto final: centro absoluto da roda
+  const p2 = {
+    x: cx,
+    y: cy,
+  };
+
+  return { p1, p2 };
+}
+
 // Geometria-base, calculada uma única vez.
 const FATIA_BASE = getFatia(0);
 const ICONE_BASE = pos(rSimbolo, 15); // meio da fatia de Áries
@@ -73,6 +86,8 @@ export default function RodaZodiaco({ className, anguloInicial = 0 }: RodaZodiac
       {signos.map((s, i) => (
         <g key={s.id} transform={`rotate(${-(anguloInicial + 30 * i)} ${cx} ${cy})`}>
           <path d={FATIA_BASE} className={s.fundo} />
+
+          {/* símbolo */}
           <text
             x={ICONE_BASE.x}
             y={ICONE_BASE.y}
@@ -83,6 +98,16 @@ export default function RodaZodiaco({ className, anguloInicial = 0 }: RodaZodiac
           >
             {s.icone}
           </text>
+
+          {/* decanatos */}
+          {[10, 20].map((g) => {
+            const linha = getLinhaDecanato(g, 32);
+            return <line key={g} x1={linha.p1.x} y1={linha.p1.y} x2={linha.p2.x} y2={linha.p2.y} className="stroke-white" strokeWidth={0.5} />;
+          })}
+          {[5, 15, 25].map((g) => {
+            const linha = getLinhaDecanato(g, 35);
+            return <line key={g} x1={linha.p1.x} y1={linha.p1.y} x2={linha.p2.x} y2={linha.p2.y} className="stroke-white/70" strokeWidth={0.5} />;
+          })}
         </g>
       ))}
 
