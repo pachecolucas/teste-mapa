@@ -23,43 +23,6 @@ const rSimbolo = (rExterno + rCentro) / 2; // ícone no meio da faixa
 
 const grausParaRad = (g: number): number => (g * Math.PI) / 180;
 
-/** Ponto sobre o círculo: ângulo 0 fica à esquerda (9 h), cresce anti-horário. */
-function pos(raio: number, angulo: number) {
-  const a = grausParaRad(angulo);
-  return { x: cx - raio * Math.cos(a), y: cy + raio * Math.sin(a) };
-}
-
-/** Fatia de pizza (do centro à borda) entre dois ângulos. */
-function getFatia(anguloInicial: number): string {
-  const p1 = pos(rExterno, anguloInicial);
-  const p2 = pos(rExterno, anguloInicial + 30);
-  return `M ${cx} ${cy} L ${p1.x.toFixed(3)} ${p1.y.toFixed(3)} ` + `A ${rExterno} ${rExterno} 0 0 0 ${p2.x.toFixed(3)} ${p2.y.toFixed(3)} Z`;
-}
-
-function getLinhaDecanato(grausDentroDoSigno: number, distanciaDaBordaExterna: number) {
-  // ponto inicial: perto da borda externa
-  const p1 = pos(rExterno - distanciaDaBordaExterna, grausDentroDoSigno);
-
-  // ponto final: centro absoluto da roda
-  const p2 = {
-    x: cx,
-    y: cy,
-  };
-
-  return { p1, p2 };
-}
-
-/**
- * Linha radial que sai do centro da roda e para na borda interna da faixa dos
- * signos (rCentro) — ou seja, antes de encontrar a parte periférica colorida.
- * `angulo` posiciona/rotaciona a linha na convenção da roda (0 = 9 h, anti-horário).
- */
-function getLinhaCentral(angulo: number) {
-  const p1 = { x: cx, y: cy }; // centro da roda
-  const p2 = pos(rCentro, angulo); // borda interna da faixa
-  return { p1, p2 };
-}
-
 // Geometria-base, calculada uma única vez.
 const FATIA_BASE = getFatia(0);
 const ICONE_BASE = pos(rSimbolo, 15); // meio da fatia de Áries
@@ -88,17 +51,17 @@ interface RodaZodiacoProps {
    * demais signos atrás dele — se movem no sentido anti-horário. Padrão 0
    * (Áries em 9 h). Aqui é onde, no futuro, entra a longitude do Ascendente.
    */
-  anguloInicial?: number;
   casas: Casa[];
+  longitude: number;
 }
 
-export default function RodaZodiaco({ casas, className, anguloInicial = 0 }: RodaZodiacoProps) {
+export default function RodaZodiaco({ casas, className, longitude }: RodaZodiacoProps) {
   return (
     <svg viewBox={`0 0 ${V} ${V}`} className={`h-auto w-full select-none ${className ?? ""}`} role="img" aria-label="Roda zodiacal com os doze signos">
       {/* Cada signo: a fatia-base + o ícone, girados juntos.
           O ângulo inicial soma na rotação, empurrando tudo anti-horário. */}
       {signos.map((s, i) => (
-        <g key={s.id} transform={`rotate(${-(anguloInicial + 30 * i)} ${cx} ${cy})`}>
+        <g key={s.id} transform={`rotate(${-(longitude + 30 * i)} ${cx} ${cy})`}>
           <path d={FATIA_BASE} className={s.fundo} />
 
           {/* símbolo */}
@@ -135,6 +98,16 @@ export default function RodaZodiaco({ casas, className, anguloInicial = 0 }: Rod
         return <line key={c.numero} x1={l.p1.x} y1={l.p1.y} x2={l.p2.x} y2={l.p2.y} className="stroke-neutral-300" strokeWidth={c.nome ? 2 : 1} />;
       })}
 
+      {/* Números das casas, no meio de cada casa, junto ao centro */}
+      {casas.map((c, i) => {
+        const p = pos(37, meioDaCasa(casas, i));
+        return (
+          <text key={`num-${c.numero}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-neutral-500 text-[8px]">
+            {c.numero}
+          </text>
+        );
+      })}
+
       {/* Borda externa */}
       <circle cx={cx} cy={cy} r={rExterno} className="fill-none stroke-neutral-300" strokeWidth={1} />
 
@@ -142,4 +115,49 @@ export default function RodaZodiaco({ casas, className, anguloInicial = 0 }: Rod
       <circle cx={cx} cy={cy} r={30} className="fill-white stroke-neutral-300" strokeWidth={1} />
     </svg>
   );
+}
+
+/** Ponto sobre o círculo: ângulo 0 fica à esquerda (9 h), cresce anti-horário. */
+function pos(raio: number, angulo: number) {
+  const a = grausParaRad(angulo);
+  return { x: cx - raio * Math.cos(a), y: cy + raio * Math.sin(a) };
+}
+
+/** Fatia de pizza (do centro à borda) entre dois ângulos. */
+function getFatia(longitude: number): string {
+  const p1 = pos(rExterno, longitude);
+  const p2 = pos(rExterno, longitude + 30);
+  return `M ${cx} ${cy} L ${p1.x.toFixed(3)} ${p1.y.toFixed(3)} ` + `A ${rExterno} ${rExterno} 0 0 0 ${p2.x.toFixed(3)} ${p2.y.toFixed(3)} Z`;
+}
+
+function getLinhaDecanato(grausDentroDoSigno: number, distanciaDaBordaExterna: number) {
+  // ponto inicial: perto da borda externa
+  const p1 = pos(rExterno - distanciaDaBordaExterna, grausDentroDoSigno);
+
+  // ponto final: centro absoluto da roda
+  const p2 = {
+    x: cx,
+    y: cy,
+  };
+
+  return { p1, p2 };
+}
+
+/**
+ * Linha radial que sai do centro da roda e para na borda interna da faixa dos
+ * signos (rCentro) — ou seja, antes de encontrar a parte periférica colorida.
+ * `angulo` posiciona/rotaciona a linha na convenção da roda (0 = 9 h, anti-horário).
+ */
+function getLinhaCentral(angulo: number) {
+  const p1 = { x: cx, y: cy }; // centro da roda
+  const p2 = pos(rCentro, angulo); // borda interna da faixa
+  return { p1, p2 };
+}
+
+/** Ângulo do meio da casa i (entre sua cúspide e a da próxima), tratando o wrap dos 360°. */
+function meioDaCasa(casas: Casa[], i: number): number {
+  const a1 = casas[i].grau;
+  let a2 = casas[(i + 1) % casas.length].grau;
+  if (a2 < a1) a2 += 360; // desfaz o wrap (a casa 12 vai de ~330 até ~360/0)
+  return ((a1 + a2) / 2) % 360;
 }

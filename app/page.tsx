@@ -48,9 +48,14 @@ export default async function Page() {
 
   return (
     <div>
-      <Home casas={getCasas(casas)} />
+      <Home casas={getCasas(casas)} longitude={getLongitude(casas)} />
     </div>
   );
+}
+
+function getLongitude(casas: ResultadoCasas) {
+  const ascendente = casas.cuspides[0];
+  return 360 - ascendente.longitude;
 }
 
 function getCasas(casas: ResultadoCasas): Casa[] {
@@ -65,7 +70,7 @@ function getCasas(casas: ResultadoCasas): Casa[] {
     return null;
   }
 
-  function getGrau(numeroDaCasa: number, longitudeDaCasa: number) {
+  function getGrau(longitudeDaCasa: number) {
     const result = longitudeDaCasa - longitudeCasa1;
     if (result < 0) return result + 360;
     return result;
@@ -74,7 +79,7 @@ function getCasas(casas: ResultadoCasas): Casa[] {
   return casas.cuspides.map((c) => {
     return {
       numero: c.casa,
-      grau: getGrau(c.casa, c.longitude),
+      grau: getGrau(c.longitude),
       nome: getNome(c.casa),
     };
   });
