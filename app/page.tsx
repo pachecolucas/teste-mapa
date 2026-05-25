@@ -1,6 +1,7 @@
 import { calcularPlanetas } from "@/lib/planetas";
 import Home from "./home";
-import { calcularCasas, DadosNatais } from "@/lib/casas";
+import { calcularCasas, DadosNatais, ResultadoCasas } from "@/lib/casas";
+import { Casa } from "@/components/Mapa/types";
 
 export default async function Page() {
   const entrada: DadosNatais = {
@@ -47,7 +48,34 @@ export default async function Page() {
 
   return (
     <div>
-      <Home />
+      <Home casas={getCasas(casas)} />
     </div>
   );
+}
+
+function getCasas(casas: ResultadoCasas): Casa[] {
+  const casa1 = casas.cuspides[0];
+  const longitudeCasa1 = casa1.longitude;
+
+  function getNome(numeroDaCasa: number) {
+    if (numeroDaCasa == 1) return "AC";
+    if (numeroDaCasa == 4) return "IC";
+    if (numeroDaCasa == 7) return "DC";
+    if (numeroDaCasa == 10) return "MC";
+    return null;
+  }
+
+  function getGrau(numeroDaCasa: number, longitudeDaCasa: number) {
+    const result = longitudeDaCasa - longitudeCasa1;
+    if (result < 0) return result + 360;
+    return result;
+  }
+
+  return casas.cuspides.map((c) => {
+    return {
+      numero: c.casa,
+      grau: getGrau(c.casa, c.longitude),
+      nome: getNome(c.casa),
+    };
+  });
 }

@@ -12,6 +12,8 @@
  * horário, então giramos por -30·i.
  */
 
+import { Casa } from "./types";
+
 const V = 400; // sistema de coordenadas interno (viewBox)
 const cx = V / 2;
 const cy = V / 2;
@@ -47,6 +49,17 @@ function getLinhaDecanato(grausDentroDoSigno: number, distanciaDaBordaExterna: n
   return { p1, p2 };
 }
 
+/**
+ * Linha radial que sai do centro da roda e para na borda interna da faixa dos
+ * signos (rCentro) — ou seja, antes de encontrar a parte periférica colorida.
+ * `angulo` posiciona/rotaciona a linha na convenção da roda (0 = 9 h, anti-horário).
+ */
+function getLinhaCentral(angulo: number) {
+  const p1 = { x: cx, y: cy }; // centro da roda
+  const p2 = pos(rCentro, angulo); // borda interna da faixa
+  return { p1, p2 };
+}
+
 // Geometria-base, calculada uma única vez.
 const FATIA_BASE = getFatia(0);
 const ICONE_BASE = pos(rSimbolo, 15); // meio da fatia de Áries
@@ -76,9 +89,10 @@ interface RodaZodiacoProps {
    * (Áries em 9 h). Aqui é onde, no futuro, entra a longitude do Ascendente.
    */
   anguloInicial?: number;
+  casas: Casa[];
 }
 
-export default function RodaZodiaco({ className, anguloInicial = 0 }: RodaZodiacoProps) {
+export default function RodaZodiaco({ casas, className, anguloInicial = 0 }: RodaZodiacoProps) {
   return (
     <svg viewBox={`0 0 ${V} ${V}`} className={`h-auto w-full select-none ${className ?? ""}`} role="img" aria-label="Roda zodiacal com os doze signos">
       {/* Cada signo: a fatia-base + o ícone, girados juntos.
@@ -114,8 +128,18 @@ export default function RodaZodiaco({ className, anguloInicial = 0 }: RodaZodiac
       {/* Círculo central que cobre os miolos das fatias */}
       <circle cx={cx} cy={cy} r={rCentro} className="fill-white" />
 
+      {/* Casas: do centro até a borda interna da faixa. */}
+      {casas.map((c) => {
+        const l = getLinhaCentral(c.grau);
+        console.log("CASA:", c.numero, c.grau);
+        return <line key={c.numero} x1={l.p1.x} y1={l.p1.y} x2={l.p2.x} y2={l.p2.y} className="stroke-neutral-300" strokeWidth={c.nome ? 2 : 1} />;
+      })}
+
       {/* Borda externa */}
       <circle cx={cx} cy={cy} r={rExterno} className="fill-none stroke-neutral-300" strokeWidth={1} />
+
+      {/* Círculo central que cobre os miolos das fatias */}
+      <circle cx={cx} cy={cy} r={30} className="fill-white stroke-neutral-300" strokeWidth={1} />
     </svg>
   );
 }
