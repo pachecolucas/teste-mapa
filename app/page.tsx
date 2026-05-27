@@ -1,7 +1,7 @@
-import { calcularPlanetas } from "@/lib/planetas";
+import { calcularPlanetas, Planeta as PlanetaBackend } from "@/lib/planetas";
 import Home from "./home";
 import { calcularCasas, DadosNatais, ResultadoCasas } from "@/lib/casas";
-import { Casa } from "@/components/Mapa/types";
+import { Casa, Planeta } from "@/components/Mapa/types";
 
 export default async function Page() {
   const entrada: DadosNatais = {
@@ -36,8 +36,9 @@ export default async function Page() {
     Quíron: "5 Gem 42'23 r",
   };
 
+  const planetasRaw = calcularPlanetas(entrada);
   console.log("=== PLANETAS (calculado | imagem) ===");
-  for (const pl of calcularPlanetas(entrada)) {
+  for (const pl of planetasRaw) {
     const flag = pl.retrogrado ? "r" : "d";
     console.log(`${pl.nome.padEnd(16)} ${fmt(pl)} ${flag}  | ${esperado[pl.nome] ?? "—"}`);
   }
@@ -48,7 +49,7 @@ export default async function Page() {
 
   return (
     <div>
-      <Home casas={getCasas(casas)} longitude={getLongitude(casas)} />
+      <Home casas={getCasas(casas)} planetas={getPlanetas(planetasRaw, casas)} longitude={getLongitude(casas)} />
     </div>
   );
 }
@@ -83,4 +84,62 @@ function getCasas(casas: ResultadoCasas): Casa[] {
       nome: getNome(c.casa),
     };
   });
+}
+
+/**
+ * Glifo Unicode de cada corpo. Mantido aqui no page.tsx por enquanto
+ * (decisão de visualização, não de cálculo). Mais tarde pode migrar
+ * para junto da lista CORPOS no backend, se preferir uma fonte única.
+ */
+const ICONES_PLANETAS: Record<string, string> = {
+  sol: "☉",
+  lua: "☽",
+  mercurio: "☿",
+  venus: "♀",
+  marte: "♂",
+  jupiter: "♃",
+  saturno: "♄",
+  urano: "♅",
+  netuno: "♆",
+  plutao: "♇",
+  nodo: "☊",
+  quiron: "⚷",
+};
+
+/**
+ * Cor do glifo de cada corpo, em hex. Hex (e não classe Tailwind) porque
+ * Tailwind precisa de classe estática; o atributo SVG `fill` aceita hex direto.
+ */
+const CORES_PLANETAS: Record<string, string> = {
+  sol: "#D4A017", // dourado
+  lua: "#60A5FA", // cinza claro (branco some no fundo claro)
+  mercurio: "#F97316", // laranja
+  venus: "#EC4899", // rosa
+  marte: "#DC2626", // vermelho
+  jupiter: "#D4A017", // preto (não especificado)
+  saturno: "#6B7280", // cinza
+  urano: "#2563EB", // azul
+  netuno: "#60A5FA", // azul claro
+  plutao: "#000000", // preto
+  nodo: "#000000", // preto (não especificado)
+  quiron: "#000000", // preto (não especificado)
+};
+
+function getPlanetas(planetas: PlanetaBackend[], casas: ResultadoCasas): Planeta[] {
+  const longitudeAC = casas.cuspides[0].longitude;
+
+  function getGrau(longitudePlaneta: number) {
+    const result = longitudePlaneta - longitudeAC;
+    if (result < 0) return result + 360;
+    return result;
+  }
+
+  return planetas.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    icone: ICONES_PLANETAS[p.id] ?? "?",
+    cor: CORES_PLANETAS[p.id] ?? "#000000",
+    grau: getGrau(p.longitude),
+    retrogrado: p.retrogrado,
+  }));
 }

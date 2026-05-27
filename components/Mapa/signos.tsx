@@ -12,7 +12,7 @@
  * horário, então giramos por -30·i.
  */
 
-import { Casa } from "./types";
+import { Casa, Planeta } from "./types";
 
 const V = 400; // sistema de coordenadas interno (viewBox)
 const cx = V / 2;
@@ -20,6 +20,7 @@ const cy = V / 2;
 const rExterno = V / 2 - 4;
 const rCentro = rExterno - 40; // círculo que tampa o miolo
 const rSimbolo = (rExterno + rCentro) / 2; // ícone no meio da faixa
+const rPlaneta = 138; // raio onde o glifo do planeta é desenhado
 
 const grausParaRad = (g: number): number => (g * Math.PI) / 180;
 
@@ -52,10 +53,11 @@ interface RodaZodiacoProps {
    * (Áries em 9 h). Aqui é onde, no futuro, entra a longitude do Ascendente.
    */
   casas: Casa[];
+  planetas: Planeta[];
   longitude: number;
 }
 
-export default function RodaZodiaco({ casas, className, longitude }: RodaZodiacoProps) {
+export default function RodaZodiaco({ casas, planetas, className, longitude }: RodaZodiacoProps) {
   return (
     <svg viewBox={`0 0 ${V} ${V}`} className={`h-auto w-full select-none ${className ?? ""}`} role="img" aria-label="Roda zodiacal com os doze signos">
       {/* Cada signo: a fatia-base + o ícone, girados juntos.
@@ -104,6 +106,16 @@ export default function RodaZodiaco({ casas, className, longitude }: RodaZodiaco
         return (
           <text key={`num-${c.numero}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-neutral-500 text-[8px]">
             {c.numero}
+          </text>
+        );
+      })}
+
+      {/* Planetas: glifo no anel interno (rPlaneta), sem rotação radial. */}
+      {planetas.map((p) => {
+        const pt = pos(rPlaneta, p.grau);
+        return (
+          <text key={`pl-${p.id}`} x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="central" fill={p.cor} className="text-[14px]">
+            {p.icone}
           </text>
         );
       })}

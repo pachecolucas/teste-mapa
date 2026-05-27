@@ -1,13 +1,14 @@
 "use client";
 
 import Mapa from "@/components/Mapa";
-import { Casa } from "@/components/Mapa/types";
+import { Casa, Planeta } from "@/components/Mapa/types";
 
 type Props = {
   casas: Casa[];
+  planetas: Planeta[];
   longitude: number;
 };
 
-export default function Index({ casas, longitude }: Props) {
-  return <Mapa casas={casas} longitude={longitude} />;
+export default function Index({ casas, longitude, planetas }: Props) {
+  return <Mapa casas={casas} planetas={planetas} longitude={longitude} />;
 }
