@@ -13,6 +13,7 @@
  */
 
 import { Casa, Planeta } from "./types";
+import type { Aspecto } from "@/lib/aspectos";
 
 const V = 400; // sistema de coordenadas interno (viewBox)
 const cx = V / 2;
@@ -21,6 +22,10 @@ const rExterno = V / 2 - 4;
 const rCentro = rExterno - 40; // círculo que tampa o miolo
 const rSimbolo = (rExterno + rCentro) / 2; // ícone no meio da faixa
 const rPlaneta = 138; // raio onde o glifo do planeta é desenhado
+const rLinhaExternaIni = rCentro; // 156 — borda interna da faixa dos signos
+const rLinhaExternaFim = 148; // pára antes do glifo (gap de 10)
+const rLinhaInternaIni = 128; // começa depois do glifo (gap de 10)
+const rLinhaInternaFim = 118; // ponto-âncora p/ aspectos no futuro
 
 const grausParaRad = (g: number): number => (g * Math.PI) / 180;
 
@@ -54,10 +59,11 @@ interface RodaZodiacoProps {
    */
   casas: Casa[];
   planetas: Planeta[];
+  aspectos: Aspecto[];
   longitude: number;
 }
 
-export default function RodaZodiaco({ casas, planetas, className, longitude }: RodaZodiacoProps) {
+export default function RodaZodiaco({ casas, planetas, aspectos, className, longitude }: RodaZodiacoProps) {
   return (
     <svg viewBox={`0 0 ${V} ${V}`} className={`h-auto w-full select-none ${className ?? ""}`} role="img" aria-label="Roda zodiacal com os doze signos">
       {/* Cada signo: a fatia-base + o ícone, girados juntos.
@@ -110,13 +116,32 @@ export default function RodaZodiaco({ casas, planetas, className, longitude }: R
         );
       })}
 
-      {/* Planetas: glifo no anel interno (rPlaneta), sem rotação radial. */}
+      {/* Aspectos: linhas no miolo conectando os pontos-âncora dos planetas
+          (ponta interna das linhas-marcador). Desenhados antes dos glifos
+          para que os planetas fiquem por cima. */}
+      {aspectos
+        .filter((a) => a.desenhar)
+        .map((a, i) => {
+          const p1 = pos(rLinhaInternaFim, a.graus[0]);
+          const p2 = pos(rLinhaInternaFim, a.graus[1]);
+          return <line key={`asp-${i}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={a.cor} strokeWidth={0.8} />;
+        })}
+
+      {/* Planetas: glifo no anel interno (rPlaneta), sem rotação radial.
+          Cada planeta vem com duas linhas-marcador radiais (externa e interna)
+          na mesma cor, indicando o grau exato e ladeando o glifo. */}
       {planetas.map((p) => {
         const pt = pos(rPlaneta, p.grau);
+        const linhaExt = getSegmentoRadial(p.grau, rLinhaExternaIni, rLinhaExternaFim);
+        const linhaInt = getSegmentoRadial(p.grau, rLinhaInternaIni, rLinhaInternaFim);
         return (
-          <text key={`pl-${p.id}`} x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="central" fill={p.cor} className="text-[14px]">
-            {p.icone}
-          </text>
+          <g key={`pl-${p.id}`}>
+            <line x1={linhaExt.p1.x} y1={linhaExt.p1.y} x2={linhaExt.p2.x} y2={linhaExt.p2.y} stroke={p.cor} strokeWidth={1} />
+            <text x={pt.x} y={pt.y} textAnchor="middle" dominantBaseline="central" fill={p.cor} className="text-[14px]">
+              {p.icone}
+            </text>
+            <line x1={linhaInt.p1.x} y1={linhaInt.p1.y} x2={linhaInt.p2.x} y2={linhaInt.p2.y} stroke={p.cor} strokeWidth={1} />
+          </g>
         );
       })}
 
@@ -164,6 +189,16 @@ function getLinhaCentral(angulo: number) {
   const p1 = { x: cx, y: cy }; // centro da roda
   const p2 = pos(rCentro, angulo); // borda interna da faixa
   return { p1, p2 };
+}
+
+/**
+ * Segmento radial entre dois raios no mesmo ângulo. Como ambos os pontos
+ * compartilham o ângulo, o segmento é perfeitamente radial (aponta para o
+ * centro). Usado para as linhas-marcador dos planetas: uma do signo até
+ * antes do glifo, outra depois do glifo descendo em direção ao centro.
+ */
+function getSegmentoRadial(angulo: number, r1: number, r2: number) {
+  return { p1: pos(r1, angulo), p2: pos(r2, angulo) };
 }
 
 /** Ângulo do meio da casa i (entre sua cúspide e a da próxima), tratando o wrap dos 360°. */

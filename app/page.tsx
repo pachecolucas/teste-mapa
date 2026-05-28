@@ -1,4 +1,5 @@
 import { calcularPlanetas, Planeta as PlanetaBackend } from "@/lib/planetas";
+import { calcularAspectos } from "@/lib/aspectos";
 import Home from "./home";
 import { calcularCasas, DadosNatais, ResultadoCasas } from "@/lib/casas";
 import { Casa, Planeta } from "@/components/Mapa/types";
@@ -47,9 +48,12 @@ export default async function Page() {
   const casas = calcularCasas(entrada);
   console.log("casas", casas);
 
+  const planetas = getPlanetas(planetasRaw, casas);
+  const aspectos = calcularAspectos(planetas);
+
   return (
     <div>
-      <Home casas={getCasas(casas)} planetas={getPlanetas(planetasRaw, casas)} longitude={getLongitude(casas)} />
+      <Home casas={getCasas(casas)} planetas={planetas} aspectos={aspectos} longitude={getLongitude(casas)} />
     </div>
   );
 }
@@ -112,11 +116,11 @@ const ICONES_PLANETAS: Record<string, string> = {
  */
 const CORES_PLANETAS: Record<string, string> = {
   sol: "#D4A017", // dourado
-  lua: "#60A5FA", // cinza claro (branco some no fundo claro)
+  lua: "#9CA3AF", // cinza claro (branco some no fundo claro)
   mercurio: "#F97316", // laranja
   venus: "#EC4899", // rosa
   marte: "#DC2626", // vermelho
-  jupiter: "#D4A017", // preto (não especificado)
+  jupiter: "#000000", // preto (não especificado)
   saturno: "#6B7280", // cinza
   urano: "#2563EB", // azul
   netuno: "#60A5FA", // azul claro
