@@ -154,10 +154,13 @@ export default function RodaZodiaco({ casas, planetas, aspectos, className, long
   );
 }
 
-/** Ponto sobre o círculo: ângulo 0 fica à esquerda (9 h), cresce anti-horário. */
+/** Ponto sobre o círculo: ângulo 0 fica à esquerda (9 h), cresce anti-horário.
+ *  Arredonda para 3 casas: evita hydration mismatch (servidor e navegador
+ *  arredondam o último bit de cos/sin de forma levemente diferente). */
 function pos(raio: number, angulo: number) {
   const a = grausParaRad(angulo);
-  return { x: cx - raio * Math.cos(a), y: cy + raio * Math.sin(a) };
+  const arredonda = (n: number) => Math.round(n * 1000) / 1000;
+  return { x: arredonda(cx - raio * Math.cos(a)), y: arredonda(cy + raio * Math.sin(a)) };
 }
 
 /** Fatia de pizza (do centro à borda) entre dois ângulos. */
